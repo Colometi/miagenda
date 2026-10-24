@@ -1,0 +1,192 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Mi agenda</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1f6f54"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>html{color-scheme:light dark}body{margin:0}</style>
+<style>
+/* Layout: calendario mensual arriba, panel del día seleccionado y próximos debajo; en pantalla ancha, dos columnas */
+:root{--bg:#f6f5f1;--card:#fff;--fg:#1d2320;--mute:#68716c;--line:#dcdad2;--accent:#1f6f54;--accent-fg:#fff;--soft:#e3efe9;--warn:#b4531a;--sans:'Barlow',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;--cond:'Barlow Condensed','Arial Narrow',Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1c2420;--fg:#e8ece9;--mute:#9aa49e;--line:#2d3833;--accent:#4fb58e;--accent-fg:#0d1511;--soft:#213a30;--warn:#e08a52;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1c2420;--fg:#e8ece9;--mute:#9aa49e;--line:#2d3833;--accent:#4fb58e;--accent-fg:#0d1511;--soft:#213a30;--warn:#e08a52;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.4;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,textarea{font:inherit;color:inherit}
+main{max-width:980px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+@media (min-width:820px){main{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+h1{margin:0;flex:1;font-family:var(--cond);font-weight:700;font-size:30px;line-height:1;text-transform:capitalize;min-width:0}
+.ib{border:1px solid var(--line);background:transparent;border-radius:8px;min-width:40px;height:40px;cursor:pointer;padding:0 10px}
+.ib:hover{background:var(--soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:center;padding-bottom:4px}
+.day{aspect-ratio:1/1;max-height:74px;border:1px solid transparent;border-radius:8px;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;font-variant-numeric:tabular-nums}
+.day:hover{background:var(--soft)}
+.day.o{color:var(--mute);opacity:.55}
+.day.t{border-color:var(--accent);font-weight:600}
+.day.s{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.dots{display:flex;gap:3px;height:6px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.day.s .dots i{background:var(--accent-fg)}
+.dots i.w{background:var(--warn)}
+h2{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+h3{margin:0 0 10px;font-family:var(--cond);font-weight:700;font-size:26px;line-height:1.1}h3::first-letter{text-transform:uppercase}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ev{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev input[type=checkbox]{flex:none;appearance:none;-webkit-appearance:none;width:24px;height:24px;margin:2px 0 0;border:2px solid var(--mute);border-radius:6px;display:grid;place-content:center;cursor:pointer;background:transparent}
+.ev input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:3px solid var(--accent-fg);border-bottom:3px solid var(--accent-fg);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.ev input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.ev input[type=checkbox]:checked::after{opacity:1}
+.b{flex:1;min-width:0;display:flex;flex-direction:column}
+.h{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent);font-size:15px}
+.ti{font-weight:500;overflow-wrap:anywhere}
+.no{font-size:15px;color:var(--mute);overflow-wrap:anywhere;white-space:pre-wrap}
+.ev.ok .ti{text-decoration:line-through;color:var(--mute)}
+.ev.ok .h{color:var(--mute)}
+.acts{display:flex;gap:4px;flex:none}
+.sm{border:1px solid var(--line);background:transparent;border-radius:6px;height:34px;padding:0 10px;cursor:pointer;font-size:14px}
+.sm:hover{background:var(--soft)}
+.sm.del{color:var(--warn)}
+.sm.sure{background:var(--warn);color:#fff;border-color:var(--warn)}
+.empty{color:var(--mute);padding:6px 0 10px}
+form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+form .f{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute);letter-spacing:.04em;min-width:0}
+input[type=text],input[type=time],input[type=date],textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 10px;font-size:16px;color:var(--fg);min-width:0}
+textarea{resize:vertical;min-height:60px}
+.row{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.pri{background:var(--accent);color:var(--accent-fg);border:0;border-radius:8px;height:42px;padding:0 20px;cursor:pointer;font-weight:600}
+.sec{background:transparent;border:1px solid var(--line);border-radius:8px;height:42px;padding:0 16px;cursor:pointer}
+.up{display:flex;gap:12px;align-items:baseline;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:9px 0;cursor:pointer;min-width:0}
+.up:last-child{border-bottom:0}
+.up .d{flex:none;width:92px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent);font-size:15px}
+.up.w .d{color:var(--warn)}
+.up .x{flex:1;min-width:0;overflow-wrap:anywhere}
+.side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.note{font-size:14px;color:var(--mute);min-height:1em;margin-top:8px}
+</style>
+<main>
+<section class="card" aria-label="Calendario">
+<div class="head">
+<h1 id="mes"></h1>
+<button class="ib" id="prev" aria-label="Mes anterior">&#8592;</button>
+<button class="ib" id="hoy">Hoy</button>
+<button class="ib" id="next" aria-label="Mes siguiente">&#8594;</button>
+</div>
+<div class="dow"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+<div class="grid" id="grid"></div>
+</section>
+
+<div class="side">
+<section class="card" aria-label="Día seleccionado">
+<h3 id="dia"></h3>
+<ul id="lista"></ul>
+<form id="form" autocomplete="off">
+<label class="f">Qué<input type="text" id="fTi" required maxlength="120" placeholder="Ej. Cita con el dentista"></label>
+<label>Fecha<input type="date" id="fFe" required></label>
+<label>Hora (opcional)<input type="time" id="fHo"></label>
+<label class="f">Notas<textarea id="fNo" maxlength="500" placeholder="Dirección, qué llevar..."></textarea></label>
+<div class="row"><button class="pri" id="fOk" type="submit">Añadir</button><button class="sec" id="fNo2" type="button" hidden>Cancelar</button></div>
+</form>
+<div class="note" id="note"></div>
+</section>
+
+<section class="card" aria-label="Próximos">
+<h2>Próximos</h2>
+<div id="prox"></div>
+</section>
+</div>
+</main>
+<script>
+(function(){
+var MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var DS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+var DC=['dom','lun','mar','mié','jue','vie','sáb'];
+function p2(n){return (n<10?'0':'')+n}
+function ymd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function parse(s){var a=s.split('-');return new Date(+a[0],+a[1]-1,+a[2])}
+var hoyS=ymd(new Date()), sel=hoyS, vy=new Date().getFullYear(), vm=new Date().getMonth();
+var ev=[], col=null, editId=null, sure=null, KEY='agenda-v1';
+function $(i){return document.getElementById(i)}
+function note(t){$('note').textContent=t||''}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(ev))}catch(e){}}
+function put(o){
+  var i=ev.findIndex(function(x){return x.id===o.id});
+  if(i<0)ev.push(o);else ev[i]=o;
+  saveLocal();render();
+  if(col)col.doc(o.id).set({fecha:o.fecha,hora:o.hora,titulo:o.titulo,nota:o.nota,hecho:o.hecho}).catch(function(){note('No se pudo guardar en la nube. Queda en este dispositivo.')});
+}
+function del(id){
+  ev=ev.filter(function(x){return x.id!==id});saveLocal();render();
+  if(col)col.doc(id).delete().catch(function(){note('No se pudo borrar en la nube.')});
+}
+function byDay(s){
+  return ev.filter(function(e){return e.fecha===s}).sort(function(a,b){return (a.hora||'').localeCompare(b.hora||'')||a.titulo.localeCompare(b.titulo)});
+}
+function longDay(s){var d=parse(s);return DS[d.getDay()]+' '+d.getDate()+' de '+MES[d.getMonth()]}
+function renderGrid(){
+  $('mes').textContent=MES[vm]+' '+vy;
+  var first=new Date(vy,vm,1), off=(first.getDay()+6)%7, start=new Date(vy,vm,1-off), g=$('grid'), h='';
+  for(var i=0;i<42;i++){
+    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(d), es=ev.filter(function(e){return e.fecha===s});
+    var dots='';es.slice(0,3).forEach(function(e){dots+='<i'+(!e.hecho&&s<hoyS?' class="w"':'')+'></i>'});
+    var c='day'+(d.getMonth()!==vm?' o':'')+(s===hoyS?' t':'')+(s===sel?' s':'');
+    h+='<button class="'+c+'" data-d="'+s+'" aria-label="'+longDay(s)+(es.length?', '+es.length+' cosas':'')+'"><span>'+d.getDate()+'</span><span class="dots">'+dots+'</span></button>';
+  }
+  g.innerHTML=h;
+}
+function esc(t){var d=document.createElement('div');d.textContent=t==null?'':t;return d.innerHTML}
+function renderDay(){
+  $('dia').textContent=longDay(sel)+(sel===hoyS?' (hoy)':'');
+  var es=byDay(sel), h='';
+  if(!es.length)h='<li class="empty">Nada apuntado este día.</li>';
+  es.forEach(function(e){
+    h+='<li class="ev'+(e.hecho?' ok':'')+'" data-id="'+e.id+'"><input type="checkbox" '+(e.hecho?'checked ':'')+'aria-label="Hecho"><div class="b">'+(e.hora?'<span class="h">'+esc(e.hora)+' h</span>':'')+'<span class="ti">'+esc(e.titulo)+'</span>'+(e.nota?'<span class="no">'+esc(e.nota)+'</span>':'')+'</div><div class="acts"><button class="sm" data-a="ed">Editar</button><button class="sm del'+(sure===e.id?' sure':'')+'" data-a="del">'+(sure===e.id?'¿Borrar?':'Borrar')+'</button></div></li>';
+  });
+  $('lista').innerHTML=h;
+}
+function renderProx(){
+  var es=ev.filter(function(e){return !e.hecho&&e.fecha>=hoyS}).sort(function(a,b){return a.fecha.localeCompare(b.fecha)||(a.hora||'').localeCompare(b.hora||'')}).slice(0,10), h='';
+  var atr=ev.filter(function(e){return !e.hecho&&e.fecha<hoyS}).sort(function(a,b){return a.fecha.localeCompare(b.fecha)});
+  function row(e,w){var d=parse(e.fecha);return '<button class="up'+(w?' w':'')+'" data-d="'+e.fecha+'"><span class="d">'+DC[d.getDay()]+' '+d.getDate()+' '+MES[d.getMonth()].slice(0,3)+'</span><span class="x">'+(e.hora?esc(e.hora)+' · ':'')+esc(e.titulo)+'</span></button>'}
+  atr.forEach(function(e){h+=row(e,true)});
+  es.forEach(function(e){h+=row(e,false)});
+  $('prox').innerHTML=h||'<div class="empty">No hay nada pendiente.</div>';
+}
+function render(){renderGrid();renderDay();renderProx()}
+function resetForm(){editId=null;$('form').reset();$('fFe').value=sel;$('fOk').textContent='Añadir';$('fNo2').hidden=true}
+function pick(s){sel=s;var d=parse(s);vy=d.getFullYear();vm=d.getMonth();sure=null;if(!editId)$('fFe').value=sel;render()}
+$('grid').addEventListener('click',function(e){var b=e.target.closest('.day');if(b)pick(b.dataset.d)});
+$('prox').addEventListener('click',function(e){var b=e.target.closest('.up');if(b){pick(b.dataset.d);$('dia').scrollIntoView({behavior:'smooth',block:'nearest'})}});
+$('prev').onclick=function(){vm--;if(vm<0){vm=11;vy--}renderGrid()};
+$('next').onclick=function(){vm++;if(vm>11){vm=0;vy++}renderGrid()};
+$('hoy').onclick=function(){hoyS=ymd(new Date());pick(hoyS)};
+$('lista').addEventListener('click',function(e){
+  var li=e.target.closest('li.ev');if(!li)return;var id=li.dataset.id, o=ev.find(function(x){return x.id===id});if(!o)return;
+  var a=e.target.dataset&&e.target.dataset.a;
+  if(e.target.type==='checkbox'){sure=null;put(Object.assign({},o,{hecho:e.target.checked}))}
+  else if(a==='del'){if(sure===id){sure=null;del(id)}else{sure=id;renderDay()}}
+  else if(a==='ed'){editId=id;sure=null;$('fTi').value=o.titulo;$('fFe').value=o.fecha;$('fHo').value=o.hora||'';$('fNo').value=o.nota||'';$('fOk').textContent='Guardar';$('fNo2').hidden=false;$('fTi').focus();renderDay()}
+});
+$('fNo2').onclick=resetForm;
+$('form').addEventListener('submit',function(e){
+  e.preventDefault();note('');
+  var t=$('fTi').value.trim();if(!t||!$('fFe').value)return;
+  var old=editId&&ev.find(function(x){return x.id===editId});
+  var o={id:editId||('e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),fecha:$('fFe').value,hora:$('fHo').value,titulo:t,nota:$('fNo').value.trim(),hecho:old?!!old.hecho:false};
+  var f=o.fecha;resetForm();put(o);pick(f);
+});
+try{var s=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(s))ev=s}catch(x){}
+resetForm();render();
+if(!localStorage.getItem(KEY+'-init')){
+  try{localStorage.setItem(KEY+'-init','1')}catch(x){}
+  if(!ev.length){ev=[
+   {id:'s1',fecha:'2026-10-26',hora:'09:30',titulo:'Visitas Comercio 4',nota:'La primera a las 9:30.',hecho:false},
+   {id:'s2',fecha:'2026-10-27',hora:'09:30',titulo:'Cita en caja',nota:'Turno PO98. Dos de Mayo, 4, Móstoles.',hecho:false},
+   {id:'s3',fecha:'2026-10-28',hora:'',titulo:'Cita en Calipo con la inmobiliaria',nota:'Llevar la escritura escaneada.',hecho:false},
+   {id:'s4',fecha:'2026-10-29',hora:'18:30',titulo:'Cita con Mamen',nota:'',hecho:false},
+   {id:'s5',fecha:'2026-11-22',hora:'',titulo:'Último día para pagar la multa de tráfico',nota:'30 días desde el 23 de octubre.',hecho:false}];saveLocal();render()}
+}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body></html>
